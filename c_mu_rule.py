@@ -39,9 +39,11 @@ def compute_policy_value(policy):
             next_state_if_finished = states[i].copy()
             next_state_if_finished[next_job_to_proccess] = 1
 
-            new_value_finished_job = compute_state_reward(next_state_if_finished) + \
+            current_state_reward = compute_state_reward(current_state)
+
+            new_value_finished_job = current_state_reward + \
                                      value[state_to_index(next_state_if_finished)]
-            new_value_unfinished_job = compute_state_reward(current_state) + \
+            new_value_unfinished_job = current_state_reward + \
                                        value[i]
             value[i] = finish_job_prob * new_value_finished_job + (1 - finish_job_prob) * new_value_unfinished_job
 
@@ -94,6 +96,12 @@ def get_policy1():
     return policy
 
 
+def get_cmu_law_policy():
+    policy = np.zeros(states.shape[0], dtype=int)
+    for i in range(policy.shape[0]):
+        policy[i] = np.argmax(jobs[1, :] * jobs[0, :] * (1 - states[i, :]))
+    return policy
+
 if __name__ == "__main__":
     policy1 = get_policy1()
     policy1_value = compute_policy_value(policy1)
@@ -102,8 +110,22 @@ if __name__ == "__main__":
     plt.title("Policy1 (take job with highest cost) Value")
     plt.show()
 
-    policy1, state0_values = policy_iteration(policy1)
+    policy1_optimal, state0_values = policy_iteration(policy1)
     plt.plot(np.arange(len(state0_values)), state0_values)
+    plt.title("Value of state0 during policy iteration")
     plt.show()
 
-    print(f"policy iteration on policy1 converged in {len(state0_values)} iterations")
+    print(f"policy iteration on policy1 converged in {len(state0_values) - 1} iterations")
+
+    policy_cmu_law = get_cmu_law_policy()
+    print("c mu law policy:", policy_cmu_law)
+    print("policy iteration policy:", policy1_optimal)
+
+    policy_cmu_law_value = compute_policy_value(policy_cmu_law)
+    plt.plot(np.arange(32), policy_cmu_law_value, label="optimal policy")
+    plt.plot(np.arange(32), policy1_value, label="policy c")
+    plt.legend()
+    plt.xlabel("state")
+    plt.ylabel("value")
+    plt.title("values")
+    plt.show()
